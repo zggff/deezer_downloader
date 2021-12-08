@@ -17,3 +17,7 @@ hex = "0.4.3"
 hex-literal = "0.3.4"
 block-modes = "0.8.1"
 blowfish = "0.8.0"
+id3 = "0.6.6"
+
+[dev-dependencies]
+tokio = {version = "1.14.0", features = ["macros", "rt-multi-thread"]}

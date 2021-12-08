@@ -2,38 +2,46 @@ use block_modes::BlockModeError;
 use serde_json::{Map, Value};
 use std::error::Error;
 
-#[derive(Debug)]
-pub struct BlowfishCypherError(pub BlockModeError);
-
-impl std::fmt::Display for BlowfishCypherError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Couldn't decode a song")
-    }
-}
-
-impl Error for BlowfishCypherError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
+/// This type represents possible errors that can occur when downloading a song from deezer
 
 #[derive(Debug, Clone)]
-pub struct DeezerApiError {
-    error_message: String,
+pub enum DeezerApiError {
+    /// this error occurs either when downloader token doesn't match with the one in cookies
+    InvalidToken,
+    /// this error might occur during the decryption process
+    DecryptionError,
+    /// any other error, minor error on the side of deezer api, such as wrong method, id, etc
+    OtherError(String),
 }
 
-impl DeezerApiError {
-    pub fn new(errors: &Map<String, Value>) -> Self {
-        let error_message = errors.iter().fold("".to_string(), |result, (key, value)| {
-            format!("{}{}:{}\n", result, key, value)
-        });
-        DeezerApiError { error_message }
+impl From<BlockModeError> for DeezerApiError {
+    fn from(_: BlockModeError) -> Self {
+        DeezerApiError::DecryptionError
+    }
+}
+
+impl From<&Map<String, Value>> for DeezerApiError {
+    fn from(errors: &Map<String, Value>) -> Self {
+        if errors.contains_key("VALID_TOKEN_REQUIRED") {
+            DeezerApiError::InvalidToken
+        } else {
+            DeezerApiError::OtherError(
+                errors.iter().fold("".to_string(), |result, (key, value)| {
+                    format!("{}{}:{}\n", result, key, value)
+                }),
+            )
+        }
     }
 }
 
 impl std::fmt::Display for DeezerApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "DeezerApi encountered an error: {}!", self.error_message)
+        let message = match self {
+            DeezerApiError::DecryptionError => "failed to decrypt file",
+            DeezerApiError::InvalidToken => "invalid CSRF token",
+            DeezerApiError::OtherError(message) => message.as_str(),
+        };
+        write!(f, "{}", message)
     }
 }
 

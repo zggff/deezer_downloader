@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::error::Error;
 
-use crate::error::{BlowfishCypherError, DeezerApiError};
+use crate::{error::DeezerApiError, song::Song};
 
 const PRIVATE_DEEZER_API_LINK: &str = "https://www.deezer.com/ajax/gw-light.php";
 const PRIVATE_DEEZER_MEDIA_LINK: &str = "https://media.deezer.com/v1/get_url";
@@ -31,6 +31,7 @@ pub struct DeezerApiResponse {
     pub results: Value,
 }
 
+/// public interface for downloading songs
 pub struct Downloader {
     client: Client,
     license_token: Option<String>,
@@ -38,7 +39,7 @@ pub struct Downloader {
 }
 
 impl Downloader {
-    pub async fn api_get(&self, api_request: DeezerApiRequest) -> Result<Value, Box<dyn Error>> {
+    async fn api_get(&self, api_request: DeezerApiRequest) -> Result<Value, Box<dyn Error>> {
         let token = match &self.token {
             Some(token) => token.as_str(),
             None => "null",
@@ -70,11 +71,13 @@ impl Downloader {
             .await?;
 
         if let Value::Object(errors) = response.error {
-            return Err(Box::new(DeezerApiError::new(&errors)));
+            return Err(Box::new(DeezerApiError::from(&errors)));
         }
+
         Ok(response.results)
     }
 
+    /// update user and license tokens. This might be needed in case of [DeezerApiError::InvalidToken]
     pub async fn update_tokens(&mut self) -> Result<(), Box<dyn Error>> {
         let userdata = self.api_get(DeezerApiRequest::UserData).await?;
         self.token = Some(userdata["checkForm"].as_str().unwrap().to_string());
@@ -100,7 +103,9 @@ impl Downloader {
         Ok(downloader)
     }
 
-    pub async fn download_song(&self, id: u64) -> Result<Vec<u8>, Box<dyn Error>> {
+    /// this function returns raw data for a song as Vec<u8>
+
+    pub async fn download_song(&mut self, id: u64) -> Result<Song, Box<dyn Error>> {
         let data = self.api_get(DeezerApiRequest::SongData { id }).await?;
         let token = if let Value::Object(fallback) = &data["FALLBACK"] {
             fallback.get("TRACK_TOKEN")
@@ -165,7 +170,7 @@ impl Downloader {
         let hash = hex::encode(hash).as_bytes().to_vec();
         let key = (0..16).fold("".to_string(), |acc, i| {
             let byte = (hash[i] ^ hash[i + 16] ^ SECRET_KEY[i]) as char;
-            let mut acc = acc.clone();
+            let mut acc = acc;
             acc.push(byte);
             acc
         });
@@ -186,8 +191,8 @@ impl Downloader {
             .collect();
 
         match decrypted_song {
-            Ok(song) => Ok(song.into_iter().flatten().collect()),
-            Err(err) => Err(Box::new(BlowfishCypherError(err))),
+            Ok(song) => Song::new(id, song.into_iter().flatten().collect(), &self.client).await,
+            Err(err) => Err(Box::new(DeezerApiError::from(err))),
         }
     }
 }
