@@ -14,9 +14,7 @@ mod tests {
     async fn download_song_by_id() -> Result<(), Box<dyn Error>> {
         let mut downloader = Downloader::new().await?;
         let song = downloader.download_song(92719900).await?;
-        song.write(format!("{}.mp3", song.metadata.id))?;
-        // file.write(&song)?;
-
+        song.write_to_file(format!("output/{}.mp3", song.metadata.id))?;
         Ok(())
     }
 }

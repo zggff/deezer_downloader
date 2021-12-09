@@ -67,7 +67,7 @@ impl Song {
     }
 
     /// write song to file
-    pub fn write<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn Error>> {
+    pub fn write_to_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         let mut file = File::create(&path)?;
         file.write_all(&self.content)?;
         self.tag.write_to_path(path, id3::Version::Id3v24)?;
