@@ -66,11 +66,16 @@ impl Song {
         })
     }
 
-    /// write song to file
+    /// write song to file with id3 metadata
     pub fn write_to_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         let mut file = File::create(&path)?;
         file.write_all(&self.content)?;
         self.tag.write_to_path(path, id3::Version::Id3v24)?;
+        Ok(())
+    }
+
+    pub fn write(&self, output: &mut impl Write) -> Result<(), Box<dyn Error>> {
+        output.write_all(&self.content)?;
         Ok(())
     }
 }
