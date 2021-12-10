@@ -1,5 +1,7 @@
 # Deezer Loader
 
+provides basic functionality needed to download a song from deezer
+
 ```rust 
 use std::{error::Error, fs::File, io::Write};
 use deezer_downloader::Downloader;
