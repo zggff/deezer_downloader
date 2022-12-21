@@ -106,6 +106,7 @@ impl Downloader {
     /// this function returns raw data for a song as Vec<u8>
 
     pub async fn download_song(&self, id: u64) -> anyhow::Result<Song> {
+        log::info!("started download: {id}");
         let data = self.api_get(DeezerApiRequest::SongData { id }).await?;
         let token = if let Value::Object(fallback) = &data["FALLBACK"] {
             fallback.get("TRACK_TOKEN")
@@ -189,7 +190,7 @@ impl Downloader {
             })
             .collect();
 
-        log::info!("downloaded song {id}");
+        log::info!("finished download {id}");
 
         match decrypted_song {
             Ok(song) => Song::new(id, song.into_iter().flatten().collect(), &self.client).await,
