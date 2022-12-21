@@ -24,3 +24,5 @@ tokio = { version = "1.23.0", features = ["full"] }
 anyhow = "1.0.68"
 log = "0.4.17"
 env_logger = "0.10.0"
+clap = { version = "4.0.30", features = ["derive"] }
+futures = "0.3.25"
