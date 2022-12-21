@@ -99,6 +99,7 @@ impl Downloader {
             license_token: None,
         };
         downloader.update_tokens().await?;
+        log::info!("Created downloader");
         Ok(downloader)
     }
 
@@ -113,10 +114,9 @@ impl Downloader {
         }
         .unwrap();
 
-        let license_token = match &self.license_token {
-            Some(license_token) => Ok(license_token),
-            None => Err(anyhow::anyhow!("no license token")),
-        }?;
+        let Some(license_token) =  &self.license_token else {
+             return Err(anyhow::anyhow!("no license token"));
+        };
 
         let get_song_url_request = json!({
             "license_token": license_token,
@@ -126,11 +126,11 @@ impl Downloader {
                     "formats": [
                         {
                             "cipher": "BF_CBC_STRIPE",
-                            "format": "MP3_128"
+                            "format": "MP3_64"
                         },
                         {
                             "cipher": "BF_CBC_STRIPE",
-                            "format": "MP3_64"
+                            "format": "MP3_128"
                         },
                         {
                             "cipher": "BF_CBC_STRIPE",
@@ -188,6 +188,8 @@ impl Downloader {
                 }
             })
             .collect();
+
+        log::info!("downloaded song {id}");
 
         match decrypted_song {
             Ok(song) => Song::new(id, song.into_iter().flatten().collect(), &self.client).await,
