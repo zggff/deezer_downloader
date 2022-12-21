@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 use deezer_downloader::Downloader;
 use futures::future::join_all;
 
+// TODO: download by playlist
 #[derive(Debug, Parser)]
 struct Cli {
     #[command(subcommand)]
