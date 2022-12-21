@@ -3,7 +3,6 @@ use blowfish::Blowfish;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::error::Error;
 
 use crate::{error::DeezerApiError, song::Song};
 
@@ -39,7 +38,7 @@ pub struct Downloader {
 }
 
 impl Downloader {
-    async fn api_get(&self, api_request: DeezerApiRequest) -> Result<Value, Box<dyn Error>> {
+    async fn api_get(&self, api_request: DeezerApiRequest) -> anyhow::Result<Value> {
         let token = match &self.token {
             Some(token) => token.as_str(),
             None => "null",
@@ -71,14 +70,14 @@ impl Downloader {
             .await?;
 
         if let Value::Object(errors) = response.error {
-            return Err(Box::new(DeezerApiError::from(&errors)));
+            Err(anyhow::Error::from(DeezerApiError::from(&errors)))
+        } else {
+            Ok(response.results)
         }
-
-        Ok(response.results)
     }
 
     /// update user and license tokens. This might be needed in case of [DeezerApiError::InvalidToken]
-    pub async fn update_tokens(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn update_tokens(&mut self) -> anyhow::Result<()> {
         let userdata = self.api_get(DeezerApiRequest::UserData).await?;
         self.token = Some(userdata["checkForm"].as_str().unwrap().to_string());
         let userdata = self.api_get(DeezerApiRequest::UserData).await?;
@@ -92,7 +91,7 @@ impl Downloader {
         Ok(())
     }
 
-    pub async fn new() -> Result<Self, Box<dyn Error>> {
+    pub async fn new() -> anyhow::Result<Self> {
         let client = reqwest::Client::builder().cookie_store(true).build()?;
         let mut downloader = Downloader {
             client,
@@ -105,7 +104,7 @@ impl Downloader {
 
     /// this function returns raw data for a song as Vec<u8>
 
-    pub async fn download_song(&mut self, id: u64) -> Result<Song, Box<dyn Error>> {
+    pub async fn download_song(&self, id: u64) -> anyhow::Result<Song> {
         let data = self.api_get(DeezerApiRequest::SongData { id }).await?;
         let token = if let Value::Object(fallback) = &data["FALLBACK"] {
             fallback.get("TRACK_TOKEN")
@@ -116,7 +115,7 @@ impl Downloader {
 
         let license_token = match &self.license_token {
             Some(license_token) => Ok(license_token),
-            None => Err("no license token"),
+            None => Err(anyhow::anyhow!("no license token")),
         }?;
 
         let get_song_url_request = json!({
@@ -192,7 +191,7 @@ impl Downloader {
 
         match decrypted_song {
             Ok(song) => Song::new(id, song.into_iter().flatten().collect(), &self.client).await,
-            Err(err) => Err(Box::new(DeezerApiError::from(err))),
+            Err(err) => Err(anyhow::Error::new(DeezerApiError::from(err))),
         }
     }
 }

@@ -27,7 +27,7 @@ impl From<&Map<String, Value>> for DeezerApiError {
         } else {
             DeezerApiError::OtherError(
                 errors.iter().fold("".to_string(), |result, (key, value)| {
-                    format!("{}{}:{}\n", result, key, value)
+                    format!("{result}{key}:{value}\n",)
                 }),
             )
         }
@@ -41,7 +41,7 @@ impl std::fmt::Display for DeezerApiError {
             DeezerApiError::InvalidToken => "invalid CSRF token",
             DeezerApiError::OtherError(message) => message.as_str(),
         };
-        write!(f, "{}", message)
+        write!(f, "{message}",)
     }
 }
 

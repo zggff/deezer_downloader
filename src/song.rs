@@ -1,7 +1,7 @@
 use id3::{frame::Picture, Tag, Timestamp};
 use reqwest::Client;
 use serde::Deserialize;
-use std::{error::Error, fs::File, io::Write, path::Path, str::FromStr};
+use std::{fs::File, io::Write, path::Path, str::FromStr};
 
 #[derive(Deserialize)]
 pub struct Artist {
@@ -36,8 +36,8 @@ pub struct Song {
 
 impl Song {
     /// create new song instance
-    pub async fn new(id: u64, raw_data: Vec<u8>, client: &Client) -> Result<Song, Box<dyn Error>> {
-        let url = format!("https://api.deezer.com/track/{}", id);
+    pub async fn new(id: u64, raw_data: Vec<u8>, client: &Client) -> anyhow::Result<Song> {
+        let url = format!("https://api.deezer.com/track/{id}");
         let metadata = client.get(url).send().await?.json::<SongMetadata>().await?;
         let cover_front = client
             .get(&metadata.album.cover_big)
@@ -67,14 +67,14 @@ impl Song {
     }
 
     /// write song to file with id3 metadata
-    pub fn write_to_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+    pub fn write_to_file(&self, path: impl AsRef<Path>) -> anyhow::Result<()> {
         let mut file = File::create(&path)?;
         file.write_all(&self.content)?;
         self.tag.write_to_path(path, id3::Version::Id3v24)?;
         Ok(())
     }
 
-    pub fn write(&self, output: &mut impl Write) -> Result<(), Box<dyn Error>> {
+    pub fn write(&self, output: &mut impl Write) -> anyhow::Result<()> {
         output.write_all(&self.content)?;
         Ok(())
     }

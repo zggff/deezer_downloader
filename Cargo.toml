@@ -5,7 +5,6 @@ edition = "2021"
 authors = ["zggff<gigamaximwachau@gmail.com>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/zggff/deezer_downloader"
-rpage = "https://github.com/zggff/deezer_downloader"
 readme = "README.md"
 keywords = ["deezer", "downloader"]
 description = "crate to download music from deezer"
@@ -21,6 +20,5 @@ hex-literal = "0.3.4"
 block-modes = "0.8.1"
 blowfish = "0.8.0"
 id3 = "0.6.6"
-
-[dev-dependencies]
-tokio = {version = "1.14.0", features = ["macros", "rt-multi-thread"]}
+tokio = { version = "1.23.0", features = ["full"] }
+anyhow = "1.0.68"
