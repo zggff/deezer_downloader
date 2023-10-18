@@ -4,7 +4,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::{error::DeezerApiError, song::Song};
+use crate::error::DeezerApiError;
 
 const PRIVATE_DEEZER_API_LINK: &str = "https://www.deezer.com/ajax/gw-light.php";
 const PRIVATE_DEEZER_MEDIA_LINK: &str = "https://media.deezer.com/v1/get_url";
@@ -38,6 +38,9 @@ pub struct Downloader {
 }
 
 impl Downloader {
+    pub fn client(&self) -> &Client {
+        &self.client
+    }
     async fn api_get(&self, api_request: DeezerApiRequest) -> anyhow::Result<Value> {
         let token = match &self.token {
             Some(token) => token.as_str(),
@@ -105,8 +108,7 @@ impl Downloader {
 
     /// this function returns raw data for a song as Vec<u8>
 
-    pub async fn download_song(&self, id: u64) -> anyhow::Result<Song> {
-        log::info!("started download: {id}");
+    pub async fn dowload_raw_song_data(&self, id: u64) -> anyhow::Result<Vec<u8>> {
         let data = self.api_get(DeezerApiRequest::SongData { id }).await?;
         let token = if let Value::Object(fallback) = &data["FALLBACK"] {
             fallback.get("TRACK_TOKEN")
@@ -115,8 +117,8 @@ impl Downloader {
         }
         .unwrap();
 
-        let Some(license_token) =  &self.license_token else {
-             return Err(anyhow::anyhow!("no license token"));
+        let Some(license_token) = &self.license_token else {
+            return Err(anyhow::anyhow!("no license token"));
         };
 
         let get_song_url_request = json!({
@@ -190,10 +192,9 @@ impl Downloader {
             })
             .collect();
 
-        log::info!("finished download {id}");
 
         match decrypted_song {
-            Ok(song) => Song::new(id, song.into_iter().flatten().collect(), &self.client).await,
+            Ok(song) => Ok(song.into_iter().flatten().collect()),
             Err(err) => Err(anyhow::Error::new(DeezerApiError::from(err))),
         }
     }
