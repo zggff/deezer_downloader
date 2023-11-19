@@ -9,12 +9,14 @@ readme = "README.md"
 keywords = ["deezer", "downloader"]
 description = "crate to download music from deezer"
 
+[features]
+binary = ["clap", "env_logger", "futures"]
+
 [dependencies]
-reqwest = {version = "0.11.7", features = ["json", "cookies"]}
-serde = {version = "1.0.130", features = ["derive"] }
+reqwest = { version = "0.11.7", features = ["json", "cookies"] }
+serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.72"
 md5 = "0.7.0"
-byteorder = "1.4.3"
 hex = "0.4.3"
 hex-literal = "0.3.4"
 block-modes = "0.8.1"
@@ -23,7 +25,14 @@ id3 = "0.6.6"
 tokio = { version = "1.23.0", features = ["full"] }
 anyhow = "1.0.68"
 log = "0.4.17"
-env_logger = "0.10.0"
-clap = { version = "4.0.30", features = ["derive"] }
-futures = "0.3.25"
 indicatif = "0.17.7"
+
+# binary dependencies
+clap = { version = "4.0.30", features = ["derive"], optional = true }
+env_logger = { version = "0.10.0", optional = true }
+futures = { version = "0.3.25", optional = true }
+
+
+[[bin]]
+name = "deezer_downloader"
+required-features = ["binary"]
