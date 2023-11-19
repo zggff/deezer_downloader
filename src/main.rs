@@ -1,4 +1,11 @@
-use std::{fs, path::PathBuf, sync::{Arc, atomic::{AtomicUsize, Ordering}}};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use clap::{Parser, Subcommand};
 use deezer_downloader::{song::Song, Downloader, Playlist, SongMetadata};
@@ -98,9 +105,7 @@ async fn main() -> anyhow::Result<()> {
                 .tracks
                 .data
                 .iter()
-                .map(|song| {
-                    filename_from_metadata(song)
-                })
+                .map(|song| filename_from_metadata(song))
                 .collect();
             // INFO: this writes all song names into m3u8 file regardless of download status
             fs::write(
@@ -141,7 +146,11 @@ async fn main() -> anyhow::Result<()> {
                 }));
             }
             join_all(tasks).await;
-            println!("DOWNLOADED: {} OUT OF {}", cnt.load(Ordering::Relaxed), playlist.len);
+            println!(
+                "DOWNLOADED: {} OUT OF {}",
+                cnt.load(Ordering::Relaxed),
+                playlist.len
+            );
             pb.finish_and_clear();
         }
     }

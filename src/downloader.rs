@@ -129,11 +129,15 @@ impl Downloader {
                     "formats": [
                         {
                             "cipher": "BF_CBC_STRIPE",
-                            "format": "MP3_64"
+                            "format": "MP3_320"
                         },
                         {
                             "cipher": "BF_CBC_STRIPE",
                             "format": "MP3_128"
+                        },
+                        {
+                            "cipher": "BF_CBC_STRIPE",
+                            "format": "MP3_64"
                         },
                         {
                             "cipher": "BF_CBC_STRIPE",
@@ -191,7 +195,6 @@ impl Downloader {
                 }
             })
             .collect();
-
 
         match decrypted_song {
             Ok(song) => Ok(song.into_iter().flatten().collect()),
